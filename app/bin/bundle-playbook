@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+#
+# Ansible Bundler v%VERSION%
+#
+# Builds a playbook and bundles it into a self-executable that you can run to get it applied to the
+# current (local) system.
+#
+# Usage: $ bundle-playbook -f playbook.yml [-r requirements.yml] [-d files] [-o playbook.run]
+
+help() {
+	echo "Usage: bundle-playbook -f <playbook.yml> [-r <requirements.yml>] [-d files] [-o <playbook.run>]"
+	echo
+	echo "Options:"
+	echo "  -f, --playbook-file=<file>      The path to the playbook you want to build. You must also add"
+	echo "                                  all local role dependencies on the same folder as the playbook"
+	echo "                                  file."
+	echo "  -d, --extra-deps=<path>         (Optional) Adds extra dependencies, such as files that are read"
+	echo "                                  by the playbook. You can pass this parameter multiple times."
+	echo "  -r, --requirements-file=<file>  (Optional) The file that describes all your Ansible Galaxy"
+	echo "                                  external role dependencies. By default, it looks for a"
+	echo "                                  requirements.yml file in the same folder as the playbook."
+	echo "  -o, --output=<file>             (Optional) The output file name. By default, it writes to a file"
+	echo "                                  named <playbook_name>.run"
+	echo "  -h, --help                      Show this message and exit."
+}
+
+main() {
+	# Get global variables
+	set_config_vars
+
+	printf "\e[1mAnsible Bundler\e[0m - \e[2mv%s\e[0m\n\n" "$VERSION"
+
+	declare playbook_path playbook_file requirements_file output_file extra_deps=()
+	validate_parameters "$@"
+
+	# Build!
+	declare tmpdir && create_build_folder
+	copy_playbook "$playbook_path" "$playbook_file" "$requirements_file" "${extra_deps[@]}"
+	install_dependencies "$requirements_file"
+	add_entrypoint
+	compress_output "$output_file"
+
+	echo "Done."
+}
+
+# These variables below are meant to be replaced at build time
+set_config_vars() {
+	VERSION=$(cd "$(dirname "$0")/../../" && cat VERSION)-dev
+	LIB_PATH=$(cd "$(dirname "$0")/../lib" && pwd)
+	ETC_PATH=$(cd "$(dirname "$0")/../etc" && pwd)
+}
+
+validate_parameters() {
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			-f|--playbook-file)
+				playbook_file=$2
+				shift 2
+				;;
+			--playbook-file=*)
+				playbook_file=${1#*=}
+				shift 1
+				;;
+
+			-r|--requirements-file)
+				requirements_file=$2
+				shift 2
+				;;
+			--requirements-file=*)
+				requirements_file=${1#*=}
+				shift 1
+				;;
+
+			-d|--extra-deps)
+				extra_deps+=("$2")
+				shift 2
+				;;
+			--extra-deps=*)
+				extra_deps+=("${1#--extra-deps=}")
+				shift 1
+				;;
+
+			-o|--output)
+				output_file=$2
+				shift 2
+				;;
+			--output=*)
+				output_file=${1#*=}
+				shift 1
+				;;
+
+			-h|--help)
+				help
+				exit
+				;;
+
+			*)
+				error "Parameter $1 is invalid. Please use --help to see all available options."
+				exit 1
+				;;
+		esac
+	done
+
+	if [ -z "$playbook_file" ]; then
+		error "You need to specify a playbook file! (use -f or --playbook-file)"
+	fi
+
+	if ! [ -r "$playbook_file" ]; then
+		error "Playbook file is not readable!"
+	fi
+
+	if [ -n "$requirements_file" ] && ! [ -r "$requirements_file" ]; then
+		error "The requirements file you specified is not readable!"
+	fi
+
+	for item in "${extra_deps[@]}"; do
+		if ! [ -r "$item" ]; then
+			error "The specified dependency '$item' is not readable!"
+		fi
+	done
+
+	playbook_path="$(dirname "$playbook_file")"
+
+	# Set default requirements_file, if it exists in the same path as the playbook
+	if [ -z "$requirements_file" ] && [ -r "$playbook_path/requirements.yml" ]; then
+		requirements_file="$playbook_path/requirements.yml"
+	fi
+
+	# Set default requirements_file, if it exists in the same path as the playbook
+	if [ -z "$output_file" ]; then
+		playbook_basename="$(basename "${playbook_file%.*}")"
+		output_file="$playbook_path/$playbook_basename.run"
+	fi
+}
+
+error() {
+	echo "$@" && exit 1
+}
+
+create_build_folder() {
+	tmpdir="$(mktemp -d /tmp/ansible-bundler.XXXXX)"
+	# shellcheck disable=SC2064
+	trap "rm -rf '$tmpdir'" EXIT
+}
+
+copy_playbook() {
+	local playbook_path=$1
+	local playbook_file=$2
+	local requirements_file=$3
+	shift 3; local extra_deps=("${@}")
+
+	echo "Adding playbook..."
+	cp -L --preserve=timestamps "$playbook_file" "$tmpdir/playbook.yml"
+	if [ -d "$playbook_path/roles" ]; then
+		echo "Adding roles..."
+		cp -Lr --preserve=timestamps "$playbook_path/roles" "$tmpdir"
+	fi
+
+	if [ -n "$requirements_file" ]; then
+		echo "Adding requirements..."
+		cp -L --preserve=timestamps "$requirements_file" "$tmpdir/requirements.yml"
+	fi
+
+	if [ ${#extra_deps[@]} -gt 0 ]; then
+		echo "Adding extra dependencies..."
+		for item in "${extra_deps[@]}"; do
+			cp -Lr --preserve=timestamps "$item" "$tmpdir"
+		done
+	fi
+
+	echo "Adding ansible config..."
+	cp -L --preserve=timestamps "$ETC_PATH/ansible.cfg" "$tmpdir"
+}
+
+# Download required roles, if any
+install_dependencies() {
+	! test -f "$tmpdir/requirements.yml" && return
+
+	echo "Installing playbook dependencies..."
+	ansible-galaxy install --ignore-errors --force-with-deps \
+		--role-file="$tmpdir/requirements.yml" \
+		--roles-path="$tmpdir/galaxy-roles"; local status=$?
+
+	if [ $status -ne 0 ]; then
+		echo "Dependencies installation failed."
+		exit 1
+	fi
+}
+
+add_entrypoint() {
+	echo "Adding entrypoint..."
+	cp -L --preserve=timestamps "$LIB_PATH/run-playbook.sh" "$tmpdir"
+	chmod 0755 "$tmpdir/run-playbook.sh"
+}
+
+compress_output() {
+	local output_file=$1
+
+	echo "Packaging files to the output..."
+
+	# First add the header to the final script
+	cat "$LIB_PATH/bin-header.sh" > "$output_file"
+
+	# Do some build-time metadata insertion
+	sed -i'' \
+		-e "s/UNCOMPRESS_SKIP=.*/UNCOMPRESS_SKIP=$(( $(wc -l < "$output_file") + 1 ))/" \
+		-e "s/\$VERSION/$VERSION/g" \
+		"$output_file"
+
+	# Then add the tar.gz binary content to it
+	tar czC "$tmpdir" . >> "$output_file"
+
+	# Lastly, make it executable
+	chmod +x "$output_file"
+
+	echo "Bundle successfully packaged to $output_file"
+}
+
+main "$@"
