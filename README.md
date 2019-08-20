@@ -49,6 +49,7 @@ $ ./playbook.run
 ```shell
 $ bundle-playbook --playbook-file=playbook.yml \
   --requirements-file=requirements.yml \
+  --vars-file=vars.yml \
   --extra-deps=files
 ```
 

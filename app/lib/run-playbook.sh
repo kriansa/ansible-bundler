@@ -48,9 +48,15 @@ run_playbook() {
 	# Export the right paths so we can run python binaries installed on non-default paths
 	export PYTHONPATH; PYTHONPATH="$(echo "$PIP_ROOT_PATH"/usr/lib/*/site-packages)"
 
+	local extra_params=()
+
+	# Add extra-vars parameter if needed
+	test -r vars.yml && extra_params+=("--extra-vars=@vars.yml")
+
 	# Run the playbook as a privileged user
 	sudo env PATH="$PATH" PYTHONPATH="$PYTHONPATH" \
-		ansible-playbook --inventory="localhost," --connection=local playbook.yml
+		ansible-playbook --inventory="localhost," --connection=local "${extra_params[@]}" \
+		playbook.yml
 }
 
 main
