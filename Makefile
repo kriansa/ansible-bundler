@@ -10,7 +10,7 @@ dist_dir=build/dist
 bin_path=/usr/bin
 lib_path=/usr/lib/ansible-bundler
 etc_path=/etc/ansible-bundler
-version=$(file < VERSION)
+version=$(shell cat VERSION)
 
 # Package variables
 package_name=ansible-bundler
@@ -32,7 +32,7 @@ package:
 	cp -r app/bin $(build_dir)/usr
 	cp -r app/etc $(build_dir)/etc/ansible-bundler
 	cp -r app/lib $(build_dir)/usr/lib/ansible-bundler
-	sed -i \
+	sed -i '' \
 		-e 's#LIB_PATH=.*#LIB_PATH=$(lib_path)#' \
 		-e 's#ETC_PATH=.*#ETC_PATH=$(etc_path)#' \
 		-e 's#VERSION=.*#VERSION=$(version)#' \
@@ -69,4 +69,4 @@ release:
 
 	# This task uses my own release helper, available here:
 	# https://github.com/kriansa/dotfiles/blob/master/plugins/git/bin/git-release
-	git release $(version) --use-version-file --artifact="$(rpm_package)" --artifact="$(deb_package)"
+	git release $(version) --sign --use-version-file --artifact="$(rpm_package)" --artifact="$(deb_package)"
