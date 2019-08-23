@@ -53,7 +53,8 @@ $ bundle-playbook --playbook-file=playbook.yml \
   --extra-deps=files
 ```
 
-> You can pass multiple `--extra-deps` (short `-d`) parameters. Roles in the `roles` folder are
+> You can pass multiple `--extra-deps` (short `-d`) parameters. These are both folders or single
+> files that you want to include on your playbook bundle. Roles in the `roles` folder are
 > automatically included.
 
 #### Binary interface
@@ -66,7 +67,7 @@ can currently use:
 --debug           Run the packaged bundler with verbose logging
 --keep-temp       Keep extracted files into the tempfolder after finishing. This is 
                   useful for debugging purposes
--e <EXTRA_VARS>, --extra-vars=<EXTRA_VARS>"
+-e <EXTRA_VARS>, --extra-vars=<EXTRA_VARS>
                   Set additional variables as key=value or YAML/JSON, or a filename if
                   prepended with @. You can pass this parameter multiple times. This will
                   take precedence on the variables that have been previously defined on
