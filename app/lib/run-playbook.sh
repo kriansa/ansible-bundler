@@ -6,26 +6,35 @@
 # Then, it will run the playbook.yml locally file using ansible.
 
 main() {
-	local basedir="."
-
-	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath $basedir/python-deps)"
-	export PATH="$PIP_ROOT_PATH/usr/bin:$PATH"
+	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath "${BASEDIR:-.}/python-deps")"
+	export PATH="${PIP_ROOT_PATH}/usr/bin:${PIP_ROOT_PATH}${HOME}/.local/bin:${PATH}"
 
 	ensure_python_is_installed
 	install_ansible
 
-	run_playbook
+	# Export the right paths so we can run python binaries installed on non-default paths
+	export PYTHONPATH; PYTHONPATH="$(echo "${PIP_ROOT_PATH}"/usr/lib/*/site-packages:"${PIP_ROOT_PATH}${HOME}"/.local/lib/*/site-packages)"
+
+	run_playbook "$@"
 }
 
 ensure_python_is_installed() {
-	if ! command -v python > /dev/null 2>&1; then
+	if ! command -v python > /dev/null 2>&1 && ! command -v python3 > /dev/null 2>&1; then
 		echo "Error: Python is not installed!"
 		exit 1
 	fi
 
-	if ! command -v pip > /dev/null 2>&1; then
+	if ! command -v pip > /dev/null 2>&1 && ! command -v pip3 > /dev/null 2>&1; then
 		echo "Error: Python pip is not found!"
 		exit 1
+	fi
+}
+
+pip() {
+	if command -v pip3 > /dev/null 2>&1; then
+		command pip3 "$@"
+	else
+		command pip "$@"
 	fi
 }
 
@@ -45,18 +54,28 @@ install_ansible() {
 }
 
 run_playbook() {
-	# Export the right paths so we can run python binaries installed on non-default paths
-	export PYTHONPATH; PYTHONPATH="$(echo "$PIP_ROOT_PATH"/usr/lib/*/site-packages)"
-
 	local extra_params=()
 
-	# Add extra-vars parameter if needed
-	test -r vars.yml && extra_params+=("--extra-vars=@vars.yml")
+	# Add bundled extra-vars parameter if existent
+	test -r "$BASEDIR/vars.yml" && extra_params+=("--extra-vars=@$BASEDIR/vars.yml")
 
-	# Run the playbook as a privileged user
-	sudo env PATH="$PATH" PYTHONPATH="$PYTHONPATH" \
-		ansible-playbook --inventory="localhost," --connection=local "${extra_params[@]}" \
-		playbook.yml
+	# Then add runtime extra-vars, if passed
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			-e|--extra-vars)
+				extra_params+=("--extra-vars" "$2")
+				shift 2
+				;;
+			--extra-vars=*)
+				extra_params+=("--extra-vars" "${1#*=}")
+				shift 1
+				;;
+		esac
+	done
+
+	# Run the playbook
+	ansible-playbook --inventory="localhost," --connection=local "${extra_params[@]}" \
+		"$BASEDIR/playbook.yml"
 }
 
-main
+main "$@"

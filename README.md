@@ -2,7 +2,7 @@
 
 Ansible Bundler embeds together a full playbook and its dependencies so you can run it it from a
 single binary on _any*_ computer, having just Python as a host dependency - you don't even need
-Ansible! 
+Ansible! Think of it as [`makeself`](https://makeself.io/) for Ansible playbooks.
 
 The closest that Ansible provides natively for this is `ansible-pull`, but it requires the host to
 have Ansible properly installed, and you need to manage the playbook location yourself.
@@ -53,7 +53,25 @@ $ bundle-playbook --playbook-file=playbook.yml \
   --extra-deps=files
 ```
 
-> You can pass multiple `--extra-deps` (short `-d`) parameters.
+> You can pass multiple `--extra-deps` (short `-d`) parameters. Roles in the `roles` folder are
+> automatically included.
+
+#### Binary interface
+
+The built playbook binary has a few options that you can use at runtime. Here are the options you
+can currently use:
+
+```
+--help            Show this help message and exit
+--debug           Run the packaged bundler with verbose logging
+--keep-temp       Keep extracted files into the tempfolder after finishing. This is 
+                  useful for debugging purposes
+-e <EXTRA_VARS>, --extra-vars=<EXTRA_VARS>"
+                  Set additional variables as key=value or YAML/JSON, or a filename if
+                  prepended with @. You can pass this parameter multiple times. This will
+                  take precedence on the variables that have been previously defined on
+                  the packaged playbook.
+```
 
 ## Installation
 

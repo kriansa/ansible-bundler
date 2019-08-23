@@ -8,32 +8,63 @@
 UNCOMPRESS_SKIP=0
 
 main() {
-	# Set the DEBUG flag to display debug logs
-	test "$1" = "--debug" && export DEBUG=1
+	# Show debug logs
+	test "$1" = "--debug" && shift && DEBUG=1
+
+	# Keep extracted files into the tempfolder. Useful for debugging
+	test "$1" = "--keep-temp" && shift && KEEP_TEMP=1
+
+	# Show help page
+	if test "$1" = "--help" || test "$1" = "-h"; then 
+		help
+		exit
+	fi
 
 	create_tmpfolder
 	extract_content
-	run_entrypoint
+	run_entrypoint "$@"
+}
+
+help() {
+	echo "Usage: $0 [OPTIONS]"
+	echo
+	echo "This is a playbook packaged using Ansible Bundler v$VERSION"
+	echo
+	echo "Options:"
+	echo "  --help            Show this help message and exit"
+	echo "  --debug           Run the packaged bundler with verbose logging"
+	echo "  --keep-temp       Keep extracted files into the tempfolder after finishing. This is"
+	echo "                    useful for debugging purposes"
+	echo "  -e <EXTRA_VARS>, --extra-vars=<EXTRA_VARS>"
+	echo "                    Set additional variables as key=value or YAML/JSON, or a filename if"
+	echo "                    prepended with @. You can pass this parameter multiple times. This will"
+	echo "                    take precedence on the variables that have been previously defined on"
+	echo "                    the packaged playbook."
 }
 
 create_tmpfolder() {
 	tmpdir="$(mktemp -d "/tmp/ansible-bundle.XXXXX")"
-	# shellcheck disable=SC2064
-	trap "log 'Finished!'; rm -rf '$tmpdir'" EXIT
+
+	if [ -n "$KEEP_TEMP" ]; then
+		trap "log 'Done.'" EXIT
+	else
+		# shellcheck disable=SC2064
+		trap "log 'Finished, removing temp content...'; rm -rf '$tmpdir'; log 'Done.'" EXIT
+	fi
 }
 
 extract_content() {
-	log "Extracting bundle contents..."
+	log "Extracting bundle contents to ${tmpdir}..."
 	tail -n +$UNCOMPRESS_SKIP "$0" | tar xzC "$tmpdir"
 }
 
 run_entrypoint() {
 	log "Running entrypoint..."
-	( cd "$tmpdir" && ./run-playbook.sh )
+	BASEDIR="$tmpdir" "$tmpdir/run-playbook.sh" "$@"
 }
 
 log() {
-	test -n "$DEBUG" && echo "$@"
+	test -n "$DEBUG" && echo "[$(date '+%Y-%m-%d %H:%I:%S %Z')]" "$@"
 }
 
 # Ensure we run main and exit afterwards, so we don't end up reading garbage
