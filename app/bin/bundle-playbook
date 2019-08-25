@@ -203,6 +203,10 @@ install_dependencies() {
 		--role-file="$tmpdir/requirements.yml" \
 		--roles-path="$tmpdir/galaxy-roles"; local status=$?
 
+	# Remove galaxy install metadata, which is dynamically generated, but non-deterministic and
+	# prevents our build output to be idempotent
+	rm "$tmpdir"/galaxy-roles/*/*/.galaxy_install_info
+
 	if [ $status -ne 0 ]; then
 		echo "Dependencies installation failed."
 		exit 1
@@ -228,6 +232,10 @@ compress_output() {
 		-e "s/UNCOMPRESS_SKIP=.*/UNCOMPRESS_SKIP=$(( $(wc -l < "$output_file") + 1 ))/" \
 		-e "s/\$VERSION/$VERSION/g" \
 		"$output_file"
+
+	# Ensure all files and directories mtime & atime dates to a specific point in time so we ensure
+	# the tar process will be idempotent given the same files are built
+	find "$tmpdir" -exec touch -d "1970-01-01T00:00:00Z" {} +
 
 	# Then add the tar.gz binary content to it
 	tar czC "$tmpdir" . >> "$output_file"
