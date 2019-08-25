@@ -32,7 +32,7 @@ package:
 	cp -r app/bin $(build_dir)/usr
 	cp -r app/etc $(build_dir)/etc/ansible-bundler
 	cp -r app/lib $(build_dir)/usr/lib/ansible-bundler
-	sed -i '' \
+	sed -i'' \
 		-e 's#LIB_PATH=.*#LIB_PATH=$(lib_path)#' \
 		-e 's#ETC_PATH=.*#ETC_PATH=$(etc_path)#' \
 		-e 's#VERSION=.*#VERSION=$(version)#' \
