@@ -6,14 +6,18 @@
 # Then, it will run the playbook.yml locally file using ansible.
 
 main() {
-	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath "${BASEDIR:-.}/python-deps")"
+	# You must call this using BASEDIR so it can locate the right path where the temp bundle was
+	# extracted. If you don't, it will use the current working dir (cwd).
+	export BASEDIR=${BASEDIR:-.}
+
+	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath "${BASEDIR}/python-deps")"
 	export PATH="${PIP_ROOT_PATH}/usr/bin:${PIP_ROOT_PATH}${HOME}/.local/bin:${PATH}"
 
 	ensure_python_is_installed
 	install_ansible
 
 	# Export the right paths so we can run python binaries installed on non-default paths
-	export PYTHONPATH; PYTHONPATH="$(echo "${PIP_ROOT_PATH}"/usr/lib/*/site-packages:"${PIP_ROOT_PATH}${HOME}"/.local/lib/*/site-packages)"
+	export PYTHONPATH; PYTHONPATH=$(find "$PIP_ROOT_PATH" -type d -name site-packages | head -1)
 
 	run_playbook "$@"
 }
@@ -74,8 +78,8 @@ run_playbook() {
 	done
 
 	# Run the playbook
-	ansible-playbook --inventory="localhost," --connection=local "${extra_params[@]}" \
-		"$BASEDIR/playbook.yml"
+	ANSIBLE_CONFIG="$BASEDIR/ansible.cfg" ansible-playbook --inventory="localhost," \
+		--connection=local "${extra_params[@]}" "$BASEDIR/playbook.yml"
 }
 
 main "$@"

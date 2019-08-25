@@ -55,7 +55,12 @@ create_tmpfolder() {
 
 extract_content() {
 	log "Extracting bundle contents to ${tmpdir}..."
-	tail -n +$UNCOMPRESS_SKIP "$0" | tar xzC "$tmpdir"
+
+	# Ensure we are compatible with both bsd and GNU tar
+	extra_params=""
+	tar --version | grep 'GNU tar' > /dev/null 2>&1 && extra_params="--warning=no-timestamp"
+
+	tail -n +$UNCOMPRESS_SKIP "$0" | tar xzC "$tmpdir" $extra_params
 }
 
 run_entrypoint() {
