@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 #
 # This is the entry point for the playbook bundle. It has a hard dependency on Python. It will try
 # to look for an already existing installation of Ansible, and will try to install it if not found.
@@ -61,29 +61,44 @@ install_ansible() {
 	fi
 }
 
+# Escapes any double quotes with backslashes
+escape_quotes() {
+	printf '%s' "$1" | sed -E 's/"/\\"/g'
+}
+
 run_playbook() {
-	local extra_params=()
+	extra_params=""
 
 	# Add bundled extra-vars parameter if existent
-	test -r "$BASEDIR/vars.yml" && extra_params+=("--extra-vars=@$BASEDIR/vars.yml")
+	test -r "$BASEDIR/vars.yml" && extra_params="--extra-vars=@$BASEDIR/vars.yml"
 
 	# Then add runtime extra-vars, if passed
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			-e|--extra-vars)
-				extra_params+=("--extra-vars" "$2")
+				extra_params="$extra_params --extra-vars \"$(escape_quotes "$2")\""
 				shift 2
 				;;
 			--extra-vars=*)
-				extra_params+=("--extra-vars" "${1#*=}")
+				extra_params="$extra_params --extra-vars \"$(escape_quotes "${1#*=}")\""
 				shift 1
 				;;
 		esac
 	done
 
+	# Trick to get the params parsed correctly on POSIX shell. I would much love not to have this kind
+	# of sorcery in the code and just use Bash arrays, but then it would be hard to be compatible with
+	# BSD. Anyway, what this does is that it will set the positional arguments ($1, $2, $3, etc) to
+	# the ones set in $extra_params using the escaped variables that we got from CLI. The function
+	# escape_quotes plays an essential role here, because it will ensure that double quotes coming
+	# from user input will be escaped properly. Then, we will use the $@ below with the parameters
+	# correctly assigned as ansible-playbook args.
+	eval "set -- $extra_params"
+
 	# Run the playbook
+	# shellcheck disable=SC2086
 	ANSIBLE_CONFIG="$BASEDIR/ansible.cfg" ansible-playbook --inventory="localhost," \
-		--connection=local "${extra_params[@]}" "$BASEDIR/playbook.yml"
+		--connection=local "$@" "$BASEDIR/playbook.yml"
 }
 
 main "$@"
