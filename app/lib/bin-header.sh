@@ -15,7 +15,7 @@ main() {
 	test "$1" = "--keep-temp" && shift && KEEP_TEMP=1
 
 	# Show help page
-	if test "$1" = "--help" || test "$1" = "-h"; then 
+	if test "$1" = "--help" || test "$1" = "-h"; then
 		help
 		exit
 	fi
