@@ -11,20 +11,28 @@ help() {
 	echo "Usage: bundle-playbook -f <playbook.yml> [-r <requirements.yml>] [-v <vars.yml>] [-d files] [-o <playbook.run>]"
 	echo
 	echo "Options:"
-	echo "  -f, --playbook-file=<file>      The path to the playbook you want to build. You must also add"
-	echo "                                  all local role dependencies on the same folder as the playbook"
-	echo "                                  file."
-	echo "  -d, --extra-deps=<path>         (Optional) Adds extra dependencies, such as files that are read"
-	echo "                                  by the playbook. You can pass this parameter multiple times."
-	echo "  -r, --requirements-file=<file>  (Optional) The file that describes all your Ansible Galaxy"
-	echo "                                  external role dependencies. By default, it looks for a"
-	echo "                                  requirements.yml file in the same folder as the playbook."
-	echo "  -v, --vars-file=<file>          (Optional) The file that contains extra variables for your"
-	echo "                                  playbook. It must NOT be encrypted by Ansible Vault."
-	echo "                                  requirements.yml file in the same folder as the playbook."
-	echo "  -o, --output=<file>             (Optional) The output file name. By default, it writes to a file"
-	echo "                                  named <playbook_name>.run"
-	echo "  -h, --help                      Show this message and exit."
+	echo "  -f, --playbook-file=<file>        The path to the playbook you want to build. You must also add"
+	echo "                                    all local role dependencies on the same folder as the playbook"
+	echo "                                    file."
+	echo "  -d, --extra-deps=<path>           (Optional) Adds extra dependencies, such as files that are read"
+	echo "                                    by the playbook. You can pass this parameter multiple times."
+	echo "  -r, --requirements-file=<file>    (Optional) The file that describes all your Ansible Galaxy"
+	echo "                                    external role dependencies. By default, it looks for a"
+	echo "                                    requirements.yml file in the same folder as the playbook."
+	echo "  -v, --vars-file=<file>            (Optional) The file that contains extra variables for your"
+	echo "                                    playbook. It must NOT be encrypted by Ansible Vault."
+	echo "                                    requirements.yml file in the same folder as the playbook."
+	echo "  -o, --output=<file>               (Optional) The output file name. By default, it writes to a file"
+	echo "                                    named <playbook_name>.run"
+	echo "  -a, --ansible-version=<version>   (Optional) The version of ansible to use on the playbook bundle."
+	echo "                                    by default, uses the latest one from PyPI at runtime."
+	echo "  -p, --python-package=<pkg>        (Optional) Install additional python dependencies to your"
+	echo "                                    playbooks. Use the python requirements.txt format to add new" 
+	echo "                                    packages (e.g. -p boto==1.2.0 -p botocore==3.1.0) - for more"
+	echo "                                    information, see pip documentation at:"
+	echo "                                    https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers"
+	echo "                                    You can pass this parameter multiple times."
+	echo "  -h, --help                        Show this message and exit."
 }
 
 main() {
@@ -33,13 +41,15 @@ main() {
 
 	printf "\e[1mAnsible Bundler\e[0m - \e[2mv%s\e[0m\n\n" "$VERSION"
 
-	declare playbook_path playbook_file requirements_file vars_file output_file extra_deps=()
+	declare playbook_path playbook_file requirements_file vars_file output_file 
+	declare ansible_version extra_python_deps=() extra_deps=()
 	validate_parameters "$@"
 
 	# Build!
 	declare tmpdir && create_build_folder
 	copy_playbook "$playbook_path" "$playbook_file" "$requirements_file" "$vars_file" "${extra_deps[@]}"
 	install_dependencies "$requirements_file"
+	add_python_requirements "$ansible_version" "${extra_python_deps[@]}"
 	add_entrypoint
 	compress_output "$output_file"
 
@@ -88,7 +98,25 @@ validate_parameters() {
 				shift 2
 				;;
 			--extra-deps=*)
-				extra_deps+=("${1#--extra-deps=}")
+				extra_deps+=("${1#*=}")
+				shift 1
+				;;
+
+			-a|--ansible-version)
+				ansible_version=$2
+				shift 2
+				;;
+			--ansible-version=*)
+				ansible_version=${1#*=}
+				shift 1
+				;;
+
+			-p|--python-package)
+				extra_python_deps+=("$2")
+				shift 2
+				;;
+			--python-package=*)
+				extra_python_deps+=("${1#*=}")
 				shift 1
 				;;
 
@@ -192,6 +220,22 @@ copy_playbook() {
 
 	echo "Adding ansible config..."
 	cp -L --preserve=timestamps "$ETC_PATH/ansible.cfg" "$tmpdir"
+}
+
+add_python_requirements() {
+	local ansible_version=$1
+	shift; local extra_packages=("${@}")
+	
+	if [ -n "$ansible_version" ]; then
+		echo "ansible==$ansible_version" > "$tmpdir/requirements.txt"
+	else
+		echo "ansible" > "$tmpdir/requirements.txt"
+	fi
+
+	# Add extra python packages
+	for package in "${extra_packages[@]}"; do
+		echo "$package" >> "$tmpdir/requirements.txt"
+	done
 }
 
 # Download required roles, if any

@@ -44,15 +44,19 @@ pip() {
 
 # Install ansible if needed
 install_ansible() {
-	command -v ansible-playbook > /dev/null 2>&1 && return
+	echo "Installing playbook Python dependencies..."
 
-	echo "Installing ansible..."
-	# Here we need to pass the absolute path to --root because there's a weird bug on PIP prevent
+	# We need to pass the absolute path to --root because there's a weird bug on PIP prevent
 	# installing the bin directory when you just pass the relative path.
-	pip install --root="$PIP_ROOT_PATH" ansible; local status=$?
+	#
+	# Uses --no-cache-dir because in some memory constrained environments, pip tries to use too much
+	# memory for the cache, which causes a MemoryError.
+	# See: https://stackoverflow.com/questions/29466663/memory-error-while-using-pip-install-matplotlib
+	pip install --requirement="$BASEDIR/requirements.txt" --no-cache-dir \
+		--user --root="$PIP_ROOT_PATH"; status=$?
 
 	if [ $status -ne 0 ]; then
-		echo "Error: Ansible could not be installed."
+		echo "Error: Python dependencies could not be installed."
 		exit 1
 	fi
 }

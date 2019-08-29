@@ -44,18 +44,22 @@ $ ./playbook.run
 
 > You will need Python on the host in order to run the final executable. :+1:
 
-##### Build with dependencies
+##### Advanced build
 
 ```shell
 $ bundle-playbook --playbook-file=playbook.yml \
   --requirements-file=requirements.yml \
   --vars-file=vars.yml \
+  --ansible-version=2.8.0 \
+  --python-package=boto3 \
   --extra-deps=files
 ```
 
-> You can pass multiple `--extra-deps` (short `-d`) parameters. These are both folders or single
-> files that you want to include on your playbook bundle. Roles in the `roles` folder are
-> automatically included.
+> By default, all files on `roles` folder in the same path as the playbook.yml are automatically
+> included. If you need more dependent files, you can specify them using `--extra-deps` (short
+> `-d`).
+
+Run `bundle-playbook --help` to get a list of all possible parameters.
 
 #### Binary interface
 
