@@ -21,7 +21,6 @@ help() {
 	echo "                                    requirements.yml file in the same folder as the playbook."
 	echo "  -v, --vars-file=<file>            (Optional) The file that contains extra variables for your"
 	echo "                                    playbook. It must NOT be encrypted by Ansible Vault."
-	echo "                                    requirements.yml file in the same folder as the playbook."
 	echo "  -o, --output=<file>               (Optional) The output file name. By default, it writes to a file"
 	echo "                                    named <playbook_name>.run"
 	echo "  -a, --ansible-version=<version>   (Optional) The version of ansible to use on the playbook bundle."
