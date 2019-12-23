@@ -8,17 +8,18 @@
 UNCOMPRESS_SKIP=0
 
 main() {
-	# Show debug logs
-	test "$1" = "--debug" && shift && DEBUG=1
+	while [ $# -gt 0 ]; do
+		case "$1" in
+			# Show debug logs
+			--debug) DEBUG=1 && shift ;;
 
-	# Keep extracted files into the tempfolder. Useful for debugging
-	test "$1" = "--keep-temp" && shift && KEEP_TEMP=1
+			# Keep extracted files into the tempfolder. Useful for debugging
+			--keep-temp) KEEP_TEMP=1 && shift ;;
 
-	# Show help page
-	if test "$1" = "--help" || test "$1" = "-h"; then
-		help
-		exit
-	fi
+			# Show help message
+			--help|-h) help && exit ;;
+		esac
+	done
 
 	create_tmpfolder
 	extract_content

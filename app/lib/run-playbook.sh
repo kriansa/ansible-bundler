@@ -83,6 +83,7 @@ run_playbook() {
 				extra_params="$extra_params --extra-vars \"$(escape_quotes "${1#*=}")\""
 				shift 1
 				;;
+			*) shift ;;
 		esac
 	done
 
