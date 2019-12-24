@@ -10,6 +10,9 @@ main() {
 	# extracted. If you don't, it will use the current working dir (cwd).
 	export BASEDIR=${BASEDIR:-.}
 
+	# Ensure we have HOME defined, otherwise set it manually
+	test -z "$HOME" && export HOME; HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
+
 	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath "${BASEDIR}/python-deps")"
 	export PATH="${PIP_ROOT_PATH}/usr/bin:${PIP_ROOT_PATH}${HOME}/.local/bin:${PATH}"
 
