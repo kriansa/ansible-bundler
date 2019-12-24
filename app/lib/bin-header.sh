@@ -18,6 +18,9 @@ main() {
 
 			# Show help message
 			--help|-h) help && exit ;;
+
+			# Ignore all other parameters
+			*) invalid_parameter_error "$1" && exit 1 ;;
 		esac
 	done
 
@@ -41,6 +44,13 @@ help() {
 	echo "                    prepended with @. You can pass this parameter multiple times. This will"
 	echo "                    take precedence on the variables that have been previously defined on"
 	echo "                    the packaged playbook."
+}
+
+invalid_parameter_error() {
+	param=$1
+
+	echo "Invalid parameter $param"
+	echo "Please use $0 --help to see all available options."
 }
 
 create_tmpfolder() {
