@@ -49,6 +49,9 @@ pip() {
 install_ansible() {
 	echo "Installing playbook Python dependencies..."
 
+	# Create package root path if non existent
+	test -d "$PIP_ROOT_PATH" || mkdir "$PIP_ROOT_PATH"
+
 	# We need to pass the absolute path to --root because there's a weird bug on PIP prevent
 	# installing the bin directory when you just pass the relative path.
 	#
