@@ -83,9 +83,8 @@ can currently use:
 Currently you can download and install it using the pre-built packages that are available in RPM and
 DEB formats on [Github releases](https://github.com/kriansa/ansible-bundler/releases). They should
 work on most RHEL-based distros (CentOS, Fedora, Amazon Linux, etc) as well as on Debian-based
-distros (Ubuntu, Mint, etc). There's also a [PKGBUILD
-available](https://github.com/kriansa/PKGBUILDs/tree/master/pkgs/ansible-bundler) if you're using
-Arch.
+distros (Ubuntu, Mint, etc). There's also a [AUR
+available](https://aur.archlinux.org/packages/ansible-bundler/) if you're using Arch.
 
 If your distro is not compatible with the prebuilt packages, please refer to [Building](#building)
 below.
