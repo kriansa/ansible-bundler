@@ -7,6 +7,23 @@
 # calculated at build-time, so we just need to keep this placeholder here.
 UNCOMPRESS_SKIP=0
 
+help() {
+	echo "Usage: $0 [OPTIONS]"
+	echo
+	echo "This is a playbook packaged using Ansible Bundler v$VERSION"
+	echo
+	echo "Options:"
+	echo "  --help            Show this help message and exit"
+	echo "  --debug           Run the packaged bundler with verbose logging"
+	echo "  --keep-temp       Keep extracted files into the tempfolder after finishing. This is"
+	echo "                    useful for debugging purposes"
+	echo "  -e <EXTRA_VARS>, --extra-vars=<EXTRA_VARS>"
+	echo "                    Set additional variables as key=value or YAML/JSON, or a filename if"
+	echo "                    prepended with @. You can pass this parameter multiple times. This will"
+	echo "                    take precedence on the variables that have been previously defined on"
+	echo "                    the packaged playbook."
+}
+
 main() {
 	args=""
 
@@ -48,23 +65,6 @@ main() {
 	create_tmpfolder
 	extract_content
 	run_entrypoint "$@"
-}
-
-help() {
-	echo "Usage: $0 [OPTIONS]"
-	echo
-	echo "This is a playbook packaged using Ansible Bundler v$VERSION"
-	echo
-	echo "Options:"
-	echo "  --help            Show this help message and exit"
-	echo "  --debug           Run the packaged bundler with verbose logging"
-	echo "  --keep-temp       Keep extracted files into the tempfolder after finishing. This is"
-	echo "                    useful for debugging purposes"
-	echo "  -e <EXTRA_VARS>, --extra-vars=<EXTRA_VARS>"
-	echo "                    Set additional variables as key=value or YAML/JSON, or a filename if"
-	echo "                    prepended with @. You can pass this parameter multiple times. This will"
-	echo "                    take precedence on the variables that have been previously defined on"
-	echo "                    the packaged playbook."
 }
 
 # Escapes any double quotes with backslashes
