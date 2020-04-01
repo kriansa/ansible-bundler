@@ -8,6 +8,8 @@
 UNCOMPRESS_SKIP=0
 
 main() {
+	args=""
+
 	while [ $# -gt 0 ]; do
 		case "$1" in
 			# Show debug logs
@@ -16,6 +18,16 @@ main() {
 			# Keep extracted files into the tempfolder. Useful for debugging
 			--keep-temp) KEEP_TEMP=1 && shift ;;
 
+			# Passthrough directly to the run-playbook.sh
+			-e|--extra-vars)
+				args="$args --extra-vars \"$(escape_quotes "$2")\""
+				shift 2
+				;;
+			--extra-vars=*)
+				args="$args --extra-vars \"$(escape_quotes "${1#*=}")\""
+				shift 1
+				;;
+
 			# Show help message
 			--help|-h) help && exit ;;
 
@@ -23,6 +35,15 @@ main() {
 			*) invalid_parameter_error "$1" && exit 1 ;;
 		esac
 	done
+
+	# Trick to get the params parsed correctly on POSIX shell. I would much love not to have this kind
+	# of sorcery in the code and just use Bash arrays, but then it would be hard to be compatible with
+	# BSD. Anyway, what this does is that it will set the positional arguments ($1, $2, $3, etc) to
+	# the ones set in $extra_params using the escaped variables that we got from CLI. The function
+	# escape_quotes plays an essential role here, because it will ensure that double quotes coming
+	# from user input will be escaped properly. Then, we will use the $@ below with the parameters
+	# correctly assigned as ansible-playbook args.
+	eval "set -- $args"
 
 	create_tmpfolder
 	extract_content
@@ -44,6 +65,11 @@ help() {
 	echo "                    prepended with @. You can pass this parameter multiple times. This will"
 	echo "                    take precedence on the variables that have been previously defined on"
 	echo "                    the packaged playbook."
+}
+
+# Escapes any double quotes with backslashes
+escape_quotes() {
+	printf '%s' "$1" | sed -E 's/"/\\"/g'
 }
 
 invalid_parameter_error() {
