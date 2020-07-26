@@ -17,7 +17,7 @@ help() {
 	echo "  -d, --extra-deps=<path>           (Optional) Adds extra dependencies, such as files that are read"
 	echo "                                    by the playbook. You can pass this parameter multiple times."
 	echo "  -r, --requirements-file=<file>    (Optional) The file that describes all your Ansible Galaxy"
-	echo "                                    external role dependencies. By default, it looks for a"
+	echo "                                    external role/collection dependencies. By default, it looks for a"
 	echo "                                    requirements.yml file in the same folder as the playbook."
 	echo "  -v, --vars-file=<file>            (Optional) The file that contains extra variables for your"
 	echo "                                    playbook. It must NOT be encrypted by Ansible Vault."
@@ -26,7 +26,7 @@ help() {
 	echo "  -a, --ansible-version=<version>   (Optional) The version of ansible to use on the playbook bundle."
 	echo "                                    by default, uses the latest one from PyPI at runtime."
 	echo "  -p, --python-package=<pkg>        (Optional) Install additional python dependencies to your"
-	echo "                                    playbooks. Use the python requirements.txt format to add new" 
+	echo "                                    playbooks. Use the python requirements.txt format to add new"
 	echo "                                    packages (e.g. -p boto==1.2.0 -p botocore==3.1.0) - for more"
 	echo "                                    information, see pip documentation at:"
 	echo "                                    https://pip.pypa.io/en/stable/reference/pip_install/#requirement-specifiers"
@@ -40,7 +40,7 @@ main() {
 
 	printf "\e[1mAnsible Bundler\e[0m - \e[2mv%s\e[0m\n\n" "$VERSION"
 
-	declare playbook_path playbook_file requirements_file vars_file output_file 
+	declare playbook_path playbook_file requirements_file vars_file output_file
 	declare ansible_version extra_python_deps=() extra_deps=()
 	validate_parameters "$@"
 
@@ -224,7 +224,7 @@ copy_playbook() {
 add_python_requirements() {
 	local ansible_version=$1
 	shift; local extra_packages=("${@}")
-	
+
 	if [ -n "$ansible_version" ]; then
 		echo "ansible==$ansible_version" > "$tmpdir/requirements.txt"
 	else
@@ -237,21 +237,53 @@ add_python_requirements() {
 	done
 }
 
-# Download required roles, if any
+# Download required roles and collections, if any
 install_dependencies() {
 	! test -f "$tmpdir/requirements.yml" && return
 
-	echo "Installing playbook dependencies..."
-	ansible-galaxy install --ignore-errors --force-with-deps \
+	install_roles
+	install_collections
+}
+
+install_collections() {
+	# Prevent collections installs if there's no such key at the requirements.yml file
+	# This will allow ansible-bundler to be backwards compatible with ansible < 2.9 when galaxy only
+	# packaged roles and not collections.
+	grep "collections:" "$tmpdir/requirements.yml" > /dev/null 2>&1 || return
+
+	echo "Installing playbook collection dependencies..."
+
+	# This line just prevents ansible-galaxy from complaining about the argument --collections-path
+	# not being at the global collections path. This is totally harmless for this purpose.
+	export ANSIBLE_COLLECTIONS_PATHS="$tmpdir/galaxy-collections"
+
+	ansible-galaxy collection install --ignore-errors --force-with-deps --verbose \
+		--requirements-file="$tmpdir/requirements.yml" \
+		--collections-path="$tmpdir/galaxy-collections"; local status=$?
+
+	if [ $status -ne 0 ]; then
+		echo "Collection dependencies installation failed."
+		exit 1
+	fi
+}
+
+install_roles() {
+	echo "Installing playbook role dependencies..."
+
+	# This line just prevents ansible-galaxy from complaining about the argument --roles-path
+	# not being at the global roles path. This is totally harmless for this purpose.
+	export ANSIBLE_ROLES_PATH="$tmpdir/galaxy-roles"
+
+	ansible-galaxy role install --ignore-errors --force-with-deps --verbose \
 		--role-file="$tmpdir/requirements.yml" \
 		--roles-path="$tmpdir/galaxy-roles"; local status=$?
 
 	# Remove galaxy install metadata, which is dynamically generated, but non-deterministic and
 	# prevents our build output to be idempotent
-	rm "$tmpdir"/galaxy-roles/*/*/.galaxy_install_info
+	rm "$tmpdir"/galaxy-roles/*/*/.galaxy_install_info 2> /dev/null
 
 	if [ $status -ne 0 ]; then
-		echo "Dependencies installation failed."
+		echo "Role dependencies installation failed."
 		exit 1
 	fi
 }
