@@ -20,7 +20,7 @@ package_maintainer=<daniel@garajau.com.br>
 package_url=https://github.com/kriansa/ansible-bundler
 
 deps:
-	docker pull skandyla/fpm
+	docker pull docker.io/skandyla/fpm
 
 clean:
 	rm -rf $(build_dir) $(dist_dir)
