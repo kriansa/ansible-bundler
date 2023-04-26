@@ -194,20 +194,20 @@ copy_playbook() {
 	shift 4; local extra_deps=("${@}")
 
 	echo "Adding playbook..."
-	cp -L --preserve=timestamps "$playbook_file" "$tmpdir/playbook.yml"
+	cp -L -p "$playbook_file" "$tmpdir/playbook.yml"
 	if [ -d "$playbook_path/roles" ]; then
 		echo "Adding roles..."
-		cp -Lr --preserve=timestamps "$playbook_path/roles" "$tmpdir"
+		cp -Lrp "$playbook_path/roles" "$tmpdir"
 	fi
 
 	if [ -n "$requirements_file" ]; then
 		echo "Adding requirements..."
-		cp -L --preserve=timestamps "$requirements_file" "$tmpdir/requirements.yml"
+		cp -L -p "$requirements_file" "$tmpdir/requirements.yml"
 	fi
 
 	if [ -n "$vars_file" ]; then
 		echo "Adding vars..."
-		cp -L --preserve=timestamps "$vars_file" "$tmpdir/vars.yml"
+		cp -L -p "$vars_file" "$tmpdir/vars.yml"
 	fi
 
 	if [ ${#extra_deps[@]} -gt 0 ]; then
@@ -218,7 +218,7 @@ copy_playbook() {
 	fi
 
 	echo "Adding ansible config..."
-	cp -L --preserve=timestamps "$ETC_PATH/ansible.cfg" "$tmpdir"
+	cp -L -p "$ETC_PATH/ansible.cfg" "$tmpdir"
 }
 
 add_python_requirements() {
@@ -290,20 +290,34 @@ install_roles() {
 
 add_entrypoint() {
 	echo "Adding entrypoint..."
-	cp -L --preserve=timestamps "$LIB_PATH/run-playbook.sh" "$tmpdir"
-	chmod 0755 "$tmpdir/run-playbook.sh"
+    if [ -e "$LIB_PATH/run-playbook.sh" ]; then
+        cp -L -p "$LIB_PATH/run-playbook.sh" "$tmpdir"
+        chmod 0755 "$tmpdir/run-playbook.sh"
+    else
+        echo "File not found: $LIB_PATH/run-playbook.sh"
+    fi
 }
 
 compress_output() {
-	local output_file=$1
+    local output_file=$1
 
-	echo "Packaging files to the output..."
+    echo "Packaging files to the output..."
 
-	# First add the header to the final script
-	cat "$LIB_PATH/bin-header.sh" > "$output_file"
+    # First add the header to the final script
+    if [ -e "$LIB_PATH/bin-header.sh" ]; then
+        cat "$LIB_PATH/bin-header.sh" > "$output_file"
+    else
+        echo "File not found: $LIB_PATH/bin-header.sh"
+    fi
 
+	SED_BINARY=''
 	# Do some build-time metadata insertion
-	sed -i'' \
+	if [[ "$(uname)" == 'Darwin' ]]; then 
+		SED_BINARY=`which gsed`
+	else 
+		SED_BINARY=`which sed`
+	fi
+	$SED_BINARY -i'' \
 		-e "s/UNCOMPRESS_SKIP=.*/UNCOMPRESS_SKIP=$(( $(wc -l < "$output_file") + 1 ))/" \
 		-e "s/\$VERSION/$VERSION/g" \
 		"$output_file"

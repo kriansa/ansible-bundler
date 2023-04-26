@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This is the entry point for the playbook bundle. It has a hard dependency on Python. It will try
 # to look for an already existing installation of Ansible, and will try to install it if not found.
@@ -11,7 +11,11 @@ main() {
 	export BASEDIR=${BASEDIR:-.}
 
 	# Ensure we have HOME defined, otherwise set it manually
-	test -z "$HOME" && export HOME; HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
+	if [[ "$(uname)" == 'Darwin' ]]; then
+ 	   test -z "$HOME" && export HOME; HOME="$(dscl . -read /Users/$(id -un) NFSHomeDirectory | awk -F': ' '{print $2}')"
+	else
+  	  test -z "$HOME" && export HOME; HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
+	fi
 
 	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath "${BASEDIR}/python-deps")"
 	export PATH="${PIP_ROOT_PATH}/usr/bin:${PIP_ROOT_PATH}${HOME}/.local/bin:${PATH}"
