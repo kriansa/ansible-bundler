@@ -128,3 +128,19 @@ Please make sure to update tests as appropriate. For more information, please re
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE.md](LICENSE.md) file for
 details.
+
+## Example
+
+Before reading this, be sure to follow the instructions  
+above to build the package.  
+
+```shell
+# Starting from the root of this repository, run this command:
+cd build/pkg/usr/bin 
+
+# Employ the basic playbook example
+./bundle-playbook -f ../../../../examples/basic.yaml
+
+# Run the playbook
+../../../../examples/basic.run -e example=VALUE
+```
