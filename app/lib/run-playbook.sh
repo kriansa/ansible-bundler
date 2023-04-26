@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This is the entry point for the playbook bundle. It has a hard dependency on Python. It will try
 # to look for an already existing installation of Ansible, and will try to install it if not found.

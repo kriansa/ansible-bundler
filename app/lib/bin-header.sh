@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # This is a packaged ansible playbook file using Ansible Bundler v$VERSION.
 # You can run this with --debug to show more information about the process.
