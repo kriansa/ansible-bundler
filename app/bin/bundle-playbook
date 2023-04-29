@@ -194,7 +194,7 @@ copy_playbook() {
 	shift 4; local extra_deps=("${@}")
 
 	echo "Adding playbook..."
-	cp -L -p "$playbook_file" "$tmpdir/playbook.yml"
+	cp -Lp "$playbook_file" "$tmpdir/playbook.yml"
 	if [ -d "$playbook_path/roles" ]; then
 		echo "Adding roles..."
 		cp -Lrp "$playbook_path/roles" "$tmpdir"
@@ -202,12 +202,12 @@ copy_playbook() {
 
 	if [ -n "$requirements_file" ]; then
 		echo "Adding requirements..."
-		cp -L -p "$requirements_file" "$tmpdir/requirements.yml"
+		cp -Lp "$requirements_file" "$tmpdir/requirements.yml"
 	fi
 
 	if [ -n "$vars_file" ]; then
 		echo "Adding vars..."
-		cp -L -p "$vars_file" "$tmpdir/vars.yml"
+		cp -Lp "$vars_file" "$tmpdir/vars.yml"
 	fi
 
 	if [ ${#extra_deps[@]} -gt 0 ]; then
@@ -218,7 +218,7 @@ copy_playbook() {
 	fi
 
 	echo "Adding ansible config..."
-	cp -L -p "$ETC_PATH/ansible.cfg" "$tmpdir"
+	cp -Lp "$ETC_PATH/ansible.cfg" "$tmpdir"
 }
 
 add_python_requirements() {
@@ -291,7 +291,7 @@ install_roles() {
 add_entrypoint() {
 	echo "Adding entrypoint..."
     if [ -e "$LIB_PATH/run-playbook.sh" ]; then
-        cp -L -p "$LIB_PATH/run-playbook.sh" "$tmpdir"
+        cp -Lp "$LIB_PATH/run-playbook.sh" "$tmpdir"
         chmod 0755 "$tmpdir/run-playbook.sh"
     else
         echo "File not found: $LIB_PATH/run-playbook.sh"
