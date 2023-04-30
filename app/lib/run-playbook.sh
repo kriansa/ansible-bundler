@@ -12,11 +12,9 @@ main() {
 
 	# Ensure we have HOME defined, otherwise set it manually
 	if [[ "$(uname)" == 'Darwin' ]]; then
-		test -z "$HOME" && export HOME
-		HOME="$(dscl . -read /Users/$(id -un) NFSHomeDirectory | awk -F': ' '{print $2}')"
+		test -z "$HOME" && export HOME; HOME="$(dscl . -read /Users/$(id -un) NFSHomeDirectory | awk -F': ' '{print $2}')"
 	else
-		test -z "$HOME" && export HOME
-		HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
+		test -z "$HOME" && export HOME; HOME="/Users/$(id -un)"
 	fi
 
 	export PIP_ROOT_PATH
