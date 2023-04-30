@@ -7,9 +7,9 @@ build_dir=build/pkg
 dist_dir=build/dist
 
 # Variables that are replaced in build time
-bin_path=/usr/bin
-lib_path=/usr/lib/ansible-bundler
-etc_path=/etc/ansible-bundler
+bin_path=.
+lib_path=../lib/ansible-bundler
+etc_path=../../etc/ansible-bundler
 version=$(shell cat VERSION)
 
 # Package variables
@@ -32,7 +32,13 @@ package:
 	cp -r app/bin $(build_dir)/usr
 	cp -r app/etc $(build_dir)/etc/ansible-bundler
 	cp -r app/lib $(build_dir)/usr/lib/ansible-bundler
-	sed -i'' \
+	UNAME=$$(uname); \
+	if [ "$$UNAME" == 'Darwin' ]; then \
+		SED_BINARY=$$(which gsed); \
+	else \
+		SED_BINARY=$$(which sed); \
+	fi; \
+	$$SED_BINARY -i'' \
 		-e 's#LIB_PATH=.*#LIB_PATH=$(lib_path)#' \
 		-e 's#ETC_PATH=.*#ETC_PATH=$(etc_path)#' \
 		-e 's#VERSION=.*#VERSION=$(version)#' \

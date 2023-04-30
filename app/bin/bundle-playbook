@@ -65,78 +65,78 @@ set_config_vars() {
 validate_parameters() {
 	while [ $# -gt 0 ]; do
 		case "$1" in
-			-f|--playbook-file)
-				playbook_file=$2
-				shift 2
-				;;
-			--playbook-file=*)
-				playbook_file=${1#*=}
-				shift 1
-				;;
+		-f | --playbook-file)
+			playbook_file=$2
+			shift 2
+			;;
+		--playbook-file=*)
+			playbook_file=${1#*=}
+			shift 1
+			;;
 
-			-r|--requirements-file)
-				requirements_file=$2
-				shift 2
-				;;
-			--requirements-file=*)
-				requirements_file=${1#*=}
-				shift 1
-				;;
+		-r | --requirements-file)
+			requirements_file=$2
+			shift 2
+			;;
+		--requirements-file=*)
+			requirements_file=${1#*=}
+			shift 1
+			;;
 
-			-v|--vars-file)
-				vars_file=$2
-				shift 2
-				;;
-			--vars-file=*)
-				vars_file=${1#*=}
-				shift 1
-				;;
+		-v | --vars-file)
+			vars_file=$2
+			shift 2
+			;;
+		--vars-file=*)
+			vars_file=${1#*=}
+			shift 1
+			;;
 
-			-d|--extra-deps)
-				extra_deps+=("$2")
-				shift 2
-				;;
-			--extra-deps=*)
-				extra_deps+=("${1#*=}")
-				shift 1
-				;;
+		-d | --extra-deps)
+			extra_deps+=("$2")
+			shift 2
+			;;
+		--extra-deps=*)
+			extra_deps+=("${1#*=}")
+			shift 1
+			;;
 
-			-a|--ansible-version)
-				ansible_version=$2
-				shift 2
-				;;
-			--ansible-version=*)
-				ansible_version=${1#*=}
-				shift 1
-				;;
+		-a | --ansible-version)
+			ansible_version=$2
+			shift 2
+			;;
+		--ansible-version=*)
+			ansible_version=${1#*=}
+			shift 1
+			;;
 
-			-p|--python-package)
-				extra_python_deps+=("$2")
-				shift 2
-				;;
-			--python-package=*)
-				extra_python_deps+=("${1#*=}")
-				shift 1
-				;;
+		-p | --python-package)
+			extra_python_deps+=("$2")
+			shift 2
+			;;
+		--python-package=*)
+			extra_python_deps+=("${1#*=}")
+			shift 1
+			;;
 
-			-o|--output)
-				output_file=$2
-				shift 2
-				;;
-			--output=*)
-				output_file=${1#*=}
-				shift 1
-				;;
+		-o | --output)
+			output_file=$2
+			shift 2
+			;;
+		--output=*)
+			output_file=${1#*=}
+			shift 1
+			;;
 
-			-h|--help)
-				help
-				exit
-				;;
+		-h | --help)
+			help
+			exit
+			;;
 
-			*)
-				error "Parameter $1 is invalid. Please use --help to see all available options."
-				exit 1
-				;;
+		*)
+			error "Parameter $1 is invalid. Please use --help to see all available options."
+			exit 1
+			;;
 		esac
 	done
 
@@ -191,23 +191,24 @@ copy_playbook() {
 	local playbook_file=$2
 	local requirements_file=$3
 	local vars_file=$4
-	shift 4; local extra_deps=("${@}")
+	shift 4
+	local extra_deps=("${@}")
 
 	echo "Adding playbook..."
-	cp -L --preserve=timestamps "$playbook_file" "$tmpdir/playbook.yml"
+	cp -Lp "$playbook_file" "$tmpdir/playbook.yml"
 	if [ -d "$playbook_path/roles" ]; then
 		echo "Adding roles..."
-		cp -Lr --preserve=timestamps "$playbook_path/roles" "$tmpdir"
+		cp -Lrp "$playbook_path/roles" "$tmpdir"
 	fi
 
 	if [ -n "$requirements_file" ]; then
 		echo "Adding requirements..."
-		cp -L --preserve=timestamps "$requirements_file" "$tmpdir/requirements.yml"
+		cp -Lp "$requirements_file" "$tmpdir/requirements.yml"
 	fi
 
 	if [ -n "$vars_file" ]; then
 		echo "Adding vars..."
-		cp -L --preserve=timestamps "$vars_file" "$tmpdir/vars.yml"
+		cp -Lp "$vars_file" "$tmpdir/vars.yml"
 	fi
 
 	if [ ${#extra_deps[@]} -gt 0 ]; then
@@ -218,22 +219,23 @@ copy_playbook() {
 	fi
 
 	echo "Adding ansible config..."
-	cp -L --preserve=timestamps "$ETC_PATH/ansible.cfg" "$tmpdir"
+	cp -Lp "$ETC_PATH/ansible.cfg" "$tmpdir"
 }
 
 add_python_requirements() {
 	local ansible_version=$1
-	shift; local extra_packages=("${@}")
+	shift
+	local extra_packages=("${@}")
 
 	if [ -n "$ansible_version" ]; then
-		echo "ansible==$ansible_version" > "$tmpdir/requirements.txt"
+		echo "ansible==$ansible_version" >"$tmpdir/requirements.txt"
 	else
-		echo "ansible" > "$tmpdir/requirements.txt"
+		echo "ansible" >"$tmpdir/requirements.txt"
 	fi
 
 	# Add extra python packages
 	for package in "${extra_packages[@]}"; do
-		echo "$package" >> "$tmpdir/requirements.txt"
+		echo "$package" >>"$tmpdir/requirements.txt"
 	done
 }
 
@@ -249,7 +251,7 @@ install_collections() {
 	# Prevent collections installs if there's no such key at the requirements.yml file
 	# This will allow ansible-bundler to be backwards compatible with ansible < 2.9 when galaxy only
 	# packaged roles and not collections.
-	grep "collections:" "$tmpdir/requirements.yml" > /dev/null 2>&1 || return
+	grep "collections:" "$tmpdir/requirements.yml" >/dev/null 2>&1 || return
 
 	echo "Installing playbook collection dependencies..."
 
@@ -259,7 +261,8 @@ install_collections() {
 
 	ansible-galaxy collection install --ignore-errors --force-with-deps --verbose \
 		--requirements-file="$tmpdir/requirements.yml" \
-		--collections-path="$tmpdir/galaxy-collections"; local status=$?
+		--collections-path="$tmpdir/galaxy-collections"
+	local status=$?
 
 	if [ $status -ne 0 ]; then
 		echo "Collection dependencies installation failed."
@@ -276,11 +279,12 @@ install_roles() {
 
 	ansible-galaxy role install --ignore-errors --force-with-deps --verbose \
 		--role-file="$tmpdir/requirements.yml" \
-		--roles-path="$tmpdir/galaxy-roles"; local status=$?
+		--roles-path="$tmpdir/galaxy-roles"
+	local status=$?
 
 	# Remove galaxy install metadata, which is dynamically generated, but non-deterministic and
 	# prevents our build output to be idempotent
-	rm "$tmpdir"/galaxy-roles/*/*/.galaxy_install_info 2> /dev/null
+	rm "$tmpdir"/galaxy-roles/*/*/.galaxy_install_info 2>/dev/null
 
 	if [ $status -ne 0 ]; then
 		echo "Role dependencies installation failed."
@@ -290,8 +294,12 @@ install_roles() {
 
 add_entrypoint() {
 	echo "Adding entrypoint..."
-	cp -L --preserve=timestamps "$LIB_PATH/run-playbook.sh" "$tmpdir"
-	chmod 0755 "$tmpdir/run-playbook.sh"
+	if [ -e "$LIB_PATH/run-playbook.sh" ]; then
+		cp -Lp "$LIB_PATH/run-playbook.sh" "$tmpdir"
+		chmod 0755 "$tmpdir/run-playbook.sh"
+	else
+		echo "File not found: $LIB_PATH/run-playbook.sh"
+	fi
 }
 
 compress_output() {
@@ -300,11 +308,21 @@ compress_output() {
 	echo "Packaging files to the output..."
 
 	# First add the header to the final script
-	cat "$LIB_PATH/bin-header.sh" > "$output_file"
+	if [ -e "$LIB_PATH/bin-header.sh" ]; then
+		cat "$LIB_PATH/bin-header.sh" >"$output_file"
+	else
+		echo "File not found: $LIB_PATH/bin-header.sh"
+	fi
 
+	SED_BINARY=''
 	# Do some build-time metadata insertion
-	sed -i'' \
-		-e "s/UNCOMPRESS_SKIP=.*/UNCOMPRESS_SKIP=$(( $(wc -l < "$output_file") + 1 ))/" \
+	if [[ "$(uname)" == 'Darwin' ]]; then
+		SED_BINARY=$(which gsed)
+	else
+		SED_BINARY=$(which sed)
+	fi
+	$SED_BINARY -i'' \
+		-e "s/UNCOMPRESS_SKIP=.*/UNCOMPRESS_SKIP=$(($(wc -l <"$output_file") + 1))/" \
 		-e "s/\$VERSION/$VERSION/g" \
 		"$output_file"
 
@@ -313,7 +331,7 @@ compress_output() {
 	find "$tmpdir" -exec touch -d "1970-01-01T00:00:00Z" {} +
 
 	# Then add the tar.gz binary content to it
-	tar czC "$tmpdir" . >> "$output_file"
+	tar czC "$tmpdir" . >>"$output_file"
 
 	# Lastly, make it executable
 	chmod +x "$output_file"

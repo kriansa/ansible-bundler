@@ -1,0 +1,12 @@
+---
+
+- hosts: all
+
+  tasks:
+    - name: basic-example
+      debug:
+        msg: You are running a basic example
+
+    - name: Print extra variable 'example'
+      debug:
+        msg: "Extra variable 'example' value: '{{ example | default('Not provided') }}'"

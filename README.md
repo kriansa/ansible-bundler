@@ -28,6 +28,26 @@ Ansible Bundler makes these steps easier by having a single binary that takes ca
 Ansible on the host and executing the playbook without having to do anything globally (such as
 installing ansible). You can simply pull the playbook binary and execute it right away.
 
+## Installation
+
+Currently you can download and install it using the pre-built packages that are available in RPM and
+DEB formats on [Github releases](https://github.com/kriansa/ansible-bundler/releases). They should
+work on most RHEL-based distros (CentOS, Fedora, Amazon Linux, etc) as well as on Debian-based
+distros (Ubuntu, Mint, etc). There's also a [AUR
+available](https://aur.archlinux.org/packages/ansible-bundler/) if you're using Arch.
+
+You can also install it using homebrew if you're on macOS:
+
+```shell
+# Install dependency
+brew install gnu-sed
+# Install ansible-bundler
+brew install kriansa/tap/ansible-bundler
+```
+
+If your distro is not compatible with the prebuilt packages, please refer to [Building](#building)
+below.
+
 ## Usage
 
 ##### Generate a new self-contained playbook:
@@ -78,18 +98,13 @@ can currently use:
                   the packaged playbook.
 ```
 
-## Installation
+---
 
-Currently you can download and install it using the pre-built packages that are available in RPM and
-DEB formats on [Github releases](https://github.com/kriansa/ansible-bundler/releases). They should
-work on most RHEL-based distros (CentOS, Fedora, Amazon Linux, etc) as well as on Debian-based
-distros (Ubuntu, Mint, etc). There's also a [AUR
-available](https://aur.archlinux.org/packages/ansible-bundler/) if you're using Arch.
+## Development
 
-If your distro is not compatible with the prebuilt packages, please refer to [Building](#building)
-below.
+This section should be read by anyone planning to contribute to this project.
 
-## Building
+### Building
 
 You will need Docker installed on your machine. When you have it installed, you can proceed
 installing the dependencies with:
@@ -108,13 +123,45 @@ $ make
 
 > The output will be at `build/pkg`
 
-In fact, we offer support for building `deb` and `rpm` artifacts out of the box:
+Additionally, we offer support for building `deb` and `rpm` artifacts out of the box:
 
 ```shell
 $ make deb rpm
 ```
 
-> The output will be at `build/dist`
+### Running local build
+
+```shell
+# Starting from the root of this repository, run this command:
+cd build/pkg/usr/bin 
+
+# Employ the basic playbook example
+./bundle-playbook -f ../../../../examples/basic.yaml
+
+# Run the playbook
+../../../../examples/basic.run -e example=VALUE
+```
+
+### Installing brew formula locally
+
+```shell
+brew install --build-from-source ./ansible-bundler.rb
+```
+
+Ignore these errors and warning from the output:
+
+```shell
+Error: Failed to load cask: ./ansible-bundler.rb
+Cask 'ansible-bundler' is unreadable: wrong constant name #<Class:0x00007fdea4148ef0>
+Warning: Treating ./ansible-bundler.rb as a formula.
+Warning: building from source is not supported!
+```
+
+Test installed formula:
+
+```shell
+bundle-playbook -f /usr/local/opt/ansible-bundler/share/ansible-bundler/examples -o basic
+```
 
 ## Contributing
 

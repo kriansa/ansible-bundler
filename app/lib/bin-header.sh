@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # This is a packaged ansible playbook file using Ansible Bundler v$VERSION.
 # You can run this with --debug to show more information about the process.
@@ -29,27 +29,27 @@ main() {
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
-			# Show debug logs
-			--debug) DEBUG=1 && shift ;;
+		# Show debug logs
+		--debug) DEBUG=1 && shift ;;
 
-			# Keep extracted files into the tempfolder. Useful for debugging
-			--keep-temp) KEEP_TEMP=1 && shift ;;
+		# Keep extracted files into the tempfolder. Useful for debugging
+		--keep-temp) KEEP_TEMP=1 && shift ;;
 
-			# Passthrough directly to the run-playbook.sh
-			-e|--extra-vars)
-				args="$args --extra-vars \"$(escape_quotes "$2")\""
-				shift 2
-				;;
-			--extra-vars=*)
-				args="$args --extra-vars \"$(escape_quotes "${1#*=}")\""
-				shift 1
-				;;
+		# Passthrough directly to the run-playbook.sh
+		-e | --extra-vars)
+			args="$args --extra-vars \"$(escape_quotes "$2")\""
+			shift 2
+			;;
+		--extra-vars=*)
+			args="$args --extra-vars \"$(escape_quotes "${1#*=}")\""
+			shift 1
+			;;
 
-			# Show help message
-			--help|-h) help && exit ;;
+		# Show help message
+		--help | -h) help && exit ;;
 
-			# Ignore all other parameters
-			*) invalid_parameter_error "$1" && exit 1 ;;
+		# Ignore all other parameters
+		*) invalid_parameter_error "$1" && exit 1 ;;
 		esac
 	done
 
@@ -69,7 +69,13 @@ main() {
 
 # Escapes any double quotes with backslashes
 escape_quotes() {
-	printf '%s' "$1" | sed -E 's/"/\\"/g'
+	SED_BINARY=''
+	if [[ "$(uname)" == 'Darwin' ]]; then
+		SED_BINARY=$(which gsed)
+	else
+		SED_BINARY=$(which sed)
+	fi
+	printf '%s' "$1" | $SED_BINARY -E 's/"/\\"/g'
 }
 
 invalid_parameter_error() {
@@ -95,7 +101,7 @@ extract_content() {
 
 	# Ensure we are compatible with both bsd and GNU tar
 	extra_params=""
-	tar --version | grep 'GNU tar' > /dev/null 2>&1 && extra_params="--warning=no-timestamp"
+	tar --version | grep 'GNU tar' >/dev/null 2>&1 && extra_params="--warning=no-timestamp"
 
 	tail -n +$UNCOMPRESS_SKIP "$0" | tar xzC "$tmpdir" $extra_params
 }
