@@ -28,6 +28,24 @@ Ansible Bundler makes these steps easier by having a single binary that takes ca
 Ansible on the host and executing the playbook without having to do anything globally (such as
 installing ansible). You can simply pull the playbook binary and execute it right away.
 
+## Installation
+
+Currently you can download and install it using the pre-built packages that are available in RPM and
+DEB formats on [Github releases](https://github.com/kriansa/ansible-bundler/releases). They should
+work on most RHEL-based distros (CentOS, Fedora, Amazon Linux, etc) as well as on Debian-based
+distros (Ubuntu, Mint, etc). There's also a [AUR
+available](https://aur.archlinux.org/packages/ansible-bundler/) if you're using Arch.
+
+You can also install it using homebrew if you're on macOS:
+
+```shell
+$ brew install kriansa/tap/ansible-bundler
+
+```
+
+If your distro is not compatible with the prebuilt packages, please refer to [Building](#building)
+below.
+
 ## Usage
 
 ##### Generate a new self-contained playbook:
@@ -78,18 +96,13 @@ can currently use:
                   the packaged playbook.
 ```
 
-## Installation
+---
 
-Currently you can download and install it using the pre-built packages that are available in RPM and
-DEB formats on [Github releases](https://github.com/kriansa/ansible-bundler/releases). They should
-work on most RHEL-based distros (CentOS, Fedora, Amazon Linux, etc) as well as on Debian-based
-distros (Ubuntu, Mint, etc). There's also a [AUR
-available](https://aur.archlinux.org/packages/ansible-bundler/) if you're using Arch.
+## Development
 
-If your distro is not compatible with the prebuilt packages, please refer to [Building](#building)
-below.
+This section should be read by anyone planning to contribute to this project.
 
-## Building
+### Building
 
 You will need Docker installed on your machine. When you have it installed, you can proceed
 installing the dependencies with:
@@ -108,13 +121,24 @@ $ make
 
 > The output will be at `build/pkg`
 
-In fact, we offer support for building `deb` and `rpm` artifacts out of the box:
+Additionally, we offer support for building `deb` and `rpm` artifacts out of the box:
 
 ```shell
 $ make deb rpm
 ```
 
-> The output will be at `build/dist`
+### Running local build
+
+```shell
+# Starting from the root of this repository, run this command:
+cd build/pkg/usr/bin 
+
+# Employ the basic playbook example
+./bundle-playbook -f ../../../../examples/basic.yaml
+
+# Run the playbook
+../../../../examples/basic.run -e example=VALUE
+```
 
 ## Contributing
 
@@ -128,19 +152,3 @@ Please make sure to update tests as appropriate. For more information, please re
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE.md](LICENSE.md) file for
 details.
-
-## Example
-
-Before reading this, be sure to follow the instructions  
-above to build the package.  
-
-```shell
-# Starting from the root of this repository, run this command:
-cd build/pkg/usr/bin 
-
-# Employ the basic playbook example
-./bundle-playbook -f ../../../../examples/basic.yaml
-
-# Run the playbook
-../../../../examples/basic.run -e example=VALUE
-```
