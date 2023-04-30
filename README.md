@@ -39,8 +39,10 @@ available](https://aur.archlinux.org/packages/ansible-bundler/) if you're using 
 You can also install it using homebrew if you're on macOS:
 
 ```shell
-$ brew install kriansa/tap/ansible-bundler
-
+# Install dependency
+brew install gnu-sed
+# Install ansible-bundler
+brew install kriansa/tap/ansible-bundler
 ```
 
 If your distro is not compatible with the prebuilt packages, please refer to [Building](#building)
@@ -138,6 +140,27 @@ cd build/pkg/usr/bin
 
 # Run the playbook
 ../../../../examples/basic.run -e example=VALUE
+```
+
+### Installing brew formula locally
+
+```shell
+brew install --build-from-source ./ansible-bundler.rb
+```
+
+Ignore these errors and warning from the output:
+
+```shell
+Error: Failed to load cask: ./ansible-bundler.rb
+Cask 'ansible-bundler' is unreadable: wrong constant name #<Class:0x00007fdea4148ef0>
+Warning: Treating ./ansible-bundler.rb as a formula.
+Warning: building from source is not supported!
+```
+
+Test installed formula:
+
+```shell
+bundle-playbook -f /usr/local/opt/ansible-bundler/share/ansible-bundler/examples -o basic
 ```
 
 ## Contributing

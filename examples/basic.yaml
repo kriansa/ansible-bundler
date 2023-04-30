@@ -9,4 +9,4 @@
 
     - name: Print extra variable 'example'
       debug:
-        msg: "Example value is {{ example }}"
+        msg: "Extra variable 'example' value: '{{ example | default('Not provided') }}'"
