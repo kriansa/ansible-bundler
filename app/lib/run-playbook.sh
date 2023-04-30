@@ -12,37 +12,41 @@ main() {
 
 	# Ensure we have HOME defined, otherwise set it manually
 	if [[ "$(uname)" == 'Darwin' ]]; then
- 	   test -z "$HOME" && export HOME; HOME="$(dscl . -read /Users/$(id -un) NFSHomeDirectory | awk -F': ' '{print $2}')"
+		test -z "$HOME" && export HOME
+		HOME="$(dscl . -read /Users/$(id -un) NFSHomeDirectory | awk -F': ' '{print $2}')"
 	else
-  	  test -z "$HOME" && export HOME; HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
+		test -z "$HOME" && export HOME
+		HOME="$(getent passwd "$(id -un)" | cut -d: -f6)"
 	fi
 
-	export PIP_ROOT_PATH; PIP_ROOT_PATH="$(realpath "${BASEDIR}/python-deps")"
+	export PIP_ROOT_PATH
+	PIP_ROOT_PATH="$(realpath "${BASEDIR}/python-deps")"
 	export PATH="${PIP_ROOT_PATH}/usr/bin:${PIP_ROOT_PATH}${HOME}/.local/bin:${PATH}"
 
 	ensure_python_is_installed
 	install_ansible
 
 	# Export the right paths so we can run python binaries installed on non-default paths
-	export PYTHONPATH; PYTHONPATH=$(find "$PIP_ROOT_PATH" -type d -name site-packages | head -1)
+	export PYTHONPATH
+	PYTHONPATH=$(find "$PIP_ROOT_PATH" -type d -name site-packages | head -1)
 
 	run_playbook "$@"
 }
 
 ensure_python_is_installed() {
-	if ! command -v python > /dev/null 2>&1 && ! command -v python3 > /dev/null 2>&1; then
+	if ! command -v python >/dev/null 2>&1 && ! command -v python3 >/dev/null 2>&1; then
 		echo "Error: Python is not installed!"
 		exit 1
 	fi
 
-	if ! command -v pip > /dev/null 2>&1 && ! command -v pip3 > /dev/null 2>&1; then
+	if ! command -v pip >/dev/null 2>&1 && ! command -v pip3 >/dev/null 2>&1; then
 		echo "Error: Python pip is not found!"
 		exit 1
 	fi
 }
 
 pip() {
-	if command -v pip3 > /dev/null 2>&1; then
+	if command -v pip3 >/dev/null 2>&1; then
 		command pip3 "$@"
 	else
 		command pip "$@"
@@ -63,7 +67,8 @@ install_ansible() {
 	# memory for the cache, which causes a MemoryError.
 	# See: https://stackoverflow.com/questions/29466663/memory-error-while-using-pip-install-matplotlib
 	pip install --requirement="$BASEDIR/requirements.txt" --no-cache-dir \
-		--user --root="$PIP_ROOT_PATH"; status=$?
+		--user --root="$PIP_ROOT_PATH"
+	status=$?
 
 	if [ $status -ne 0 ]; then
 		echo "Error: Python dependencies could not be installed."
@@ -85,15 +90,15 @@ run_playbook() {
 	# Then add runtime extra-vars, if passed
 	while [ $# -gt 0 ]; do
 		case "$1" in
-			-e|--extra-vars)
-				extra_params="$extra_params --extra-vars \"$(escape_quotes "$2")\""
-				shift 2
-				;;
-			--extra-vars=*)
-				extra_params="$extra_params --extra-vars \"$(escape_quotes "${1#*=}")\""
-				shift 1
-				;;
-			*) shift ;;
+		-e | --extra-vars)
+			extra_params="$extra_params --extra-vars \"$(escape_quotes "$2")\""
+			shift 2
+			;;
+		--extra-vars=*)
+			extra_params="$extra_params --extra-vars \"$(escape_quotes "${1#*=}")\""
+			shift 1
+			;;
+		*) shift ;;
 		esac
 	done
 
