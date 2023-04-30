@@ -69,7 +69,13 @@ main() {
 
 # Escapes any double quotes with backslashes
 escape_quotes() {
-	printf '%s' "$1" | sed -E 's/"/\\"/g'
+	SED_BINARY=''
+	if [[ "$(uname)" == 'Darwin' ]]; then 
+		SED_BINARY=`which gsed`
+	else 
+		SED_BINARY=`which sed`
+	fi
+	printf '%s' "$1" | $SED_BINARY -E 's/"/\\"/g'
 }
 
 invalid_parameter_error() {
